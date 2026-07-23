@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EAECF2;
+    --bg-grid: #DCDFE9;
+    --card: #FFFFFF;
+    --ink: #1C2230;
+    --ink-soft: #5B6273;
+    --border: #DFE2EA;
+    --accent: #3B4CCA;
+    --accent-soft: #EBEDFB;
+    --success: #1FA97D;
+    --success-soft: #E4F6EF;
+    --danger: #E4572E;
+    --danger-soft: #FDEAE3;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px),
+      var(--bg);
+    background-size: 28px 28px, 28px 28px, auto;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+
+  .ledger {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--success);
+    border-radius: 4px;
+    transition: width 0.35s ease;
+  }
+
+  .progress-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .composer {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .composer input {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .composer input:focus {
+    border-color: var(--accent);
+  }
+
+  .composer button {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 20px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.15s ease;
+  }
+
+  .composer button:hover { background: #303fb0; }
+  .composer button:active { transform: scale(0.97); }
+
+  .filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+
+  .filter-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .task-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 14px;
+    animation: slideIn 0.2s ease;
+  }
+
+  .task.completed {
+    border-left-color: var(--success);
+    background: var(--success-soft);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-index {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    min-width: 20px;
+  }
+
+  .task-checkbox {
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+    border-radius: 5px;
+    border: 1.5px solid var(--ink-soft);
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .task-checkbox:checked {
+    background: var(--success);
+    border-color: var(--success);
+  }
+
+  .task-checkbox:checked::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .task-text {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.4;
+    cursor: text;
+    word-break: break-word;
+  }
+
+  .task.completed .task-text {
+    text-decoration: line-through;
+    color: var(--ink-soft);
+  }
+
+  .task-text[contenteditable="true"] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+    padding: 2px 4px;
+    cursor: text;
+  }
+
+  .task-delete {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 10px;
+    border: 1px solid var(--danger-soft);
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0.75;
+    transition: all 0.15s ease;
+  }
+
+  .task-delete:hover {
+    opacity: 1;
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .empty-state strong {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .clear-btn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .clear-btn:hover { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="ledger">
+  <div class="eyebrow">Task Ledger — Local Storage Build</div>
+  <h1>Today's Tasks</h1>
+
+  <div class="progress-row">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0 / 0</div>
+  </div>
+
+  <form class="composer" id="composerForm">
+    <input type="text" id="taskInput" placeholder="What needs doing?" autocomplete="off" maxlength="200">
+    <button type="submit">Add</button>
+  </form>
+
+  <div class="filters" id="filterBar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="active">Active</button>
+    <button class="filter-btn" data-filter="completed">Completed</button>
+  </div>
+
+  <ul class="task-list" id="taskList"></ul>
+
+  <div class="footer-row">
+    <span id="remainingLabel">0 items left</span>
+    <button class="clear-btn" id="clearCompleted">Clear completed</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- STATE ----------
+  // Single source of truth: an array of task objects.
+  // Each task: { id: string, text: string, completed: boolean }
+  const STORAGE_KEY = 'todo_app_tasks_v1';
+  let tasks = loadTasks();
+  let currentFilter = 'all'; // 'all' | 'active' | 'completed'
+
+  // ---------- DOM REFERENCES ----------
+  const taskListEl = document.getElementById('taskList');
+  const composerForm = document.getElementById('composerForm');
+  const taskInput = document.getElementById('taskInput');
+  const filterBar = document.getElementById('filterBar');
+  const progressFill = document.getElementById('progressFill');
+  const progressLabel = document.getElementById('progressLabel');
+  const remainingLabel = document.getElementById('remainingLabel');
+  const clearCompletedBtn = document.getElementById('clearCompleted');
+
+  // ---------- PERSISTENCE ----------
+  function loadTasks() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (err) {
+      console.error('Failed to load tasks from localStorage:', err);
+      return [];
+    }
+  }
+
+  function saveTasks() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (err) {
+      console.error('Failed to save tasks to localStorage:', err);
+    }
+  }
+
+  // ---------- CREATE ----------
+  function addTask(text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    tasks.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text: trimmed,
+      completed: false
+    });
+    saveTasks();
+    render();
+  }
+
+  // ---------- UPDATE ----------
+  function toggleTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (task) task.completed = !task.completed;
+    saveTasks();
+    render();
+  }
+
+  function editTaskText(id, newText) {
+    const trimmed = newText.trim();
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    if (trimmed === '') {
+      // Empty edit = treat as delete, matches user expectation
+      deleteTask(id);
+      return;
+    }
+    task.text = trimmed;
+    saveTasks();
+    render();
+  }
+
+  // ---------- DELETE ----------
+  function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks();
+    render();
+  }
+
+  function clearCompleted() {
+    tasks = tasks.filter(t => !t.completed);
+    saveTasks();
+    render();
+  }
+
+  // ---------- READ / RENDER ----------
+  function getFilteredTasks() {
+    if (currentFilter === 'active') return tasks.filter(t => !t.completed);
+    if (currentFilter === 'completed') return tasks.filter(t => t.completed);
+    return tasks;
+  }
+
+  function render() {
+    const filtered = getFilteredTasks();
+    taskListEl.innerHTML = '';
+
+    if (filtered.length === 0) {
+      const emptyMessages = {
+        all: ['No tasks yet', 'Add your first task above to get started.'],
+        active: ['Nothing active', 'Every task is completed, or the list is empty.'],
+        completed: ['Nothing completed yet', 'Finished tasks will show up here.']
+      };
+      const [title, sub] = emptyMessages[currentFilter];
+      const empty = document.createElement('li');
+      empty.className = 'empty-state';
+      empty.innerHTML = `<strong>${title}</strong>${sub}`;
+      taskListEl.appendChild(empty);
+    } else {
+      filtered.forEach((task, index) => {
+        const li = document.createElement('li');
+        li.className = 'task' + (task.completed ? ' completed' : '');
+        li.dataset.id = task.id;
+
+        li.innerHTML = `
+          <span class="task-index">${String(index + 1).padStart(2, '0')}</span>
+          <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+          <span class="task-text" data-editable="true">${escapeHtml(task.text)}</span>
+          <button type="button" class="task-delete">Delete</button>
+        `;
+        taskListEl.appendChild(li);
+      });
+    }
+
+    updateFooter();
+    updateFilterButtons();
+  }
+
+  function updateFooter() {
+    const total = tasks.length;
+    const completedCount = tasks.filter(t => t.completed).length;
+    const remaining = total - completedCount;
+
+    progressLabel.textContent = `${completedCount} / ${total}`;
+    progressFill.style.width = total === 0 ? '0%' : `${(completedCount / total) * 100}%`;
+    remainingLabel.textContent = `${remaining} item${remaining === 1 ? '' : 's'} left`;
+  }
+
+  function updateFilterButtons() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === currentFilter);
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- EVENT HANDLING ----------
+
+  // Create: form submit (handles both button click and Enter key)
+  composerForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    addTask(taskInput.value);
+    taskInput.value = '';
+    taskInput.focus();
+  });
+
+  // Filtering: delegated listener on the filter bar
+  filterBar.addEventListener('click', function (e) {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+
+  // Delegated listener on the task list handles checkbox toggle + delete
+  // for every task, including ones added dynamically after page load.
+  taskListEl.addEventListener('click', function (e) {
+    const li = e.target.closest('.task');
+    if (!li) return;
+    const id = li.dataset.id;
+
+    if (e.target.classList.contains('task-checkbox')) {
+      toggleTask(id);
+    } else if (e.target.classList.contains('task-delete')) {
+      li.style.opacity = '0';
+      setTimeout(() => deleteTask(id), 120);
+    }
+  });
+
+  // Update: double-click a task's text to edit it inline
+  taskListEl.addEventListener('dblclick', function (e) {
+    const span = e.target.closest('.task-text');
+    if (!span) return;
+    span.contentEditable = 'true';
+    span.focus();
+
+    // Select all text for quick overwrite
+    const range = document.createRange();
+    range.selectNodeContents(span);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+
+  // Commit edit on blur or Enter key
+  taskListEl.addEventListener('focusout', function (e) {
+    const span = e.target.closest('.task-text');
+    if (!span || span.contentEditable !== 'true') return;
+    const li = span.closest('.task');
+    span.contentEditable = 'false';
+    editTaskText(li.dataset.id, span.textContent);
+  });
+
+  taskListEl.addEventListener('keydown', function (e) {
+    const span = e.target.closest('.task-text');
+    if (!span || span.contentEditable !== 'true') return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      span.blur();
+    }
+    if (e.key === 'Escape') {
+      span.textContent = tasks.find(t => t.id === span.closest('.task').dataset.id).text;
+      span.blur();
+    }
+  });
+
+  clearCompletedBtn.addEventListener('click', clearCompleted);
+
+  // ---------- INIT ----------
+  render();
+})();
+</script>
+
+</body>
+</html>
